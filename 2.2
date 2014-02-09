@@ -1,0 +1,146 @@
+#include <stdio.h> 
+
+int check_avail(int rec_size)
+{
+	int offset;
+	
+	//go through the availability list to find offset
+	return offset;
+}
+
+void insertIntoIndex(char rec_key[], int rec_offset)
+{
+	typedef struct { 
+	int key; /* Record's key */ 
+	long off; /* Record's offset in file */ 
+	} index_S; 
+	
+	index_S.key=rec_key;
+	index_S.off=rec_offset;
+	//use insertion sort on index.bin to insert new record
+}
+
+
+void add(char key[], char rec[])
+{
+	char *buf; /* Buffer to hold student record */ 
+	FILE *fp; /* Input/output stream */ 
+	long rec_off; /* Record offset */ 
+	int rec_siz; /* Record size, in characters */ 
+	
+	/* If student.db doesn't exist, create it, otherwise read * its first record */ 
+	if ( ( fp = fopen( "student.db", "r+b" ) ) == NULL ) 
+	{ 
+		fp = fopen( "student.db", "w+b" ); 
+		int len=strlen(rec);
+		printf("rec is %s \nsize of the record is %d\n\n\n",rec, len);
+		fwrite(&len, sizeof(int), 1, fp);
+		fwrite(&rec, sizeof(char), len, fp);
+	}
+	 
+	else 
+	{ 	
+	//printf("key read is: %s\n", key);
+    //printf("rec read is: %s\n", rec);
+    if(key_exists(key))						//check if key already exists in the index.bin
+    	printf("\nRecord with SID=%s exists", key);
+    	
+    else									//if not, check availablity list
+											//add the key to the index.bin with offset keeping it sorted
+    	{
+    		int total_size=len*sizeof(char)+sizeof(int);		//sizeof(char) will be 1
+    		int offset = check_avail(total_size);				//check_avail to return offset at which record has to be inserted in the student.db file
+    		if(offset==-1)
+    			//append to the end of index.bin
+    		
+    		else    		
+			insertIntoIndex(key,offset);						//actually sorting and inserting the index and offset in index.bin
+		}
+    }
+	}
+	
+}
+
+int key_exists(char key[])		//check is primary key exists in the index.bin using binary search
+{
+	return 1;
+}
+
+void del(char key[])
+{
+}
+
+void find(char key[])
+{
+}
+
+void end()
+{
+}
+
+int main (int argc, char *argv[])
+{
+		
+int c;
+FILE *file;   
+file = fopen("input-02.txt", "r");
+
+
+char key[30];
+char rec[100];
+   
+    if (file == NULL) {
+        printf("Error opening file.\n");
+    } else {
+        while (!feof(file)) {
+           fscanf(file,"%s",command);
+            //printf("word read is: %s\n", command);
+            
+            if (!strcmp(command,"add"))
+            {
+            fscanf(file,"%s%s",key,rec);
+            //printf("key read is: %s\n", key);
+            //printf("rec read is: %s\n", rec);
+            add(key,rec);
+            
+       		}
+       		
+       		else
+       			if(!strcmp(command,"find"))
+       			{
+            		fscanf(file,"%s",key);
+            		//printf("key read is: %s\n", key);
+            		find(key);
+       			}
+       			
+       		else
+       			if(!strcmp(command,"del"))
+       			{
+            		fscanf(file,"%s",key);
+            		//printf("key read is: %s\n", key);
+            		del(key);
+       			}
+       			
+       		else
+       			if(!strcmp(command,"end"))
+       			{
+            		break;
+            		end();		//write to file and print final output for index and availability list
+       			}
+        }
+    }
+    fclose(file);
+    
+    
+  
+	
+	
+	
+	
+	typedef struct { 
+	int siz; /* Hole's size */ 
+	long off; /* Hole's offset in file */ 
+	} avail_S;
+    
+}
+
