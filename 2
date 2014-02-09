@@ -1,0 +1,123 @@
+#include <stdio.h> 
+
+void add(char key[], char rec[])
+{
+	char *buf; /* Buffer to hold student record */ 
+	FILE *fp; /* Input/output stream */ 
+	long rec_off; /* Record offset */ 
+	int rec_siz; /* Record size, in characters */ 
+	
+	/* If student.db doesn't exist, create it, otherwise read * its first record */ 
+	if ( ( fp = fopen( "student.db", "r+b" ) ) == NULL ) 
+	{ 
+		fp = fopen( "student.db", "w+b" ); 
+		int len=strlen()
+		
+		buf=malloc(rec);
+		buf=rec;
+		printf("%d\n", sizeof(*buf));
+		fwrite(rec, sizeof(char), buf, fp);
+	//	fread( buf, 1, rec_siz, fp );
+	} 
+	else 
+	{ 
+		printf("Do nothing for now");
+	}
+	
+	printf("key read is: %s\n", key);
+    printf("rec read is: %s\n", rec);
+    if(key_exists(key))
+    	printf("\nRecord with SID=%s exists", key);
+}
+
+int key_exists(char key[])		//check is primary key exists in the index.bin
+{
+	return 1;
+}
+
+void del(char key[])
+{
+}
+
+void find(char key[])
+{
+}
+
+void end()
+{
+}
+
+int main (int argc, char *argv[])
+{
+		
+int c;
+FILE *file;   
+file = fopen("input-02.txt", "r");
+
+
+char command[30];
+char key[30];
+char rec[100];
+   
+    if (file == NULL) {
+        printf("Error opening file.\n");
+    } else {
+        while (!feof(file)) {
+           fscanf(file,"%s",command);
+            //printf("word read is: %s\n", command);
+            
+            if (!strcmp(command,"add"))
+            {
+            fscanf(file,"%s%s",key,rec);
+            //printf("key read is: %s\n", key);
+            //printf("rec read is: %s\n", rec);
+            add(key,rec);
+            
+       		}
+       		
+       		else
+       			if(!strcmp(command,"find"))
+       			{
+            		fscanf(file,"%s",key);
+            		//printf("key read is: %s\n", key);
+            		find(key);
+       			}
+       			
+       		else
+       			if(!strcmp(command,"del"))
+       			{
+            		fscanf(file,"%s",key);
+            		//printf("key read is: %s\n", key);
+            		del(key);
+       			}
+       			
+       		else
+       			if(!strcmp(command,"end"))
+       			{
+            		break;
+            		end();		//print final output for index and availability list
+       			}
+        }
+    }
+    fclose(file);
+    
+    
+    typedef struct { 
+	int key; /* Record's key */ 
+	long off; /* Record's offset in file */ 
+	} index_S; 
+	
+	FILE *out; /* Output file stream */ 
+	index_S prim[ 50 ]; /* Primary key index */ 
+	out = fopen( "index.bin", "wb" ); 
+	fwrite( prim, sizeof( index_S ), 50, out ); 
+	fclose( out );
+	
+	
+	typedef struct { 
+	int siz; /* Hole's size */ 
+	long off; /* Hole's offset in file */ 
+	} avail_S;
+    
+}
+
