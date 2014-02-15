@@ -1,0 +1,459 @@
+#include <stdio.h> 
+
+#define MAX 10000
+	typedef struct { 
+	int key; /* Record's key */ 
+	long off; /* Record's offset in file */ 
+	} index_S; 
+	
+	index_S prim[sizeof(index_S)*10000];
+		
+	typedef struct { 
+	long siz; /* Hole's size */ 
+	long off; /* Hole's offset in file */ 
+	} avail_S;
+	
+	avail_S availList[sizeof(avail_S)*10000];
+	int count=0;
+	int avail=0;
+//	char policy[20];
+
+long check_avail(long rec_size)
+{
+	char policy[]="--best-fit";
+//	printf("Policy %s",policy);
+	
+	if(avail==0)
+	{
+	return -1;
+	}
+		
+	
+	//go through the availability list to find offset
+	else
+	{
+			if(strcmp(policy,"--first-fit"))
+			{
+				printf("inside first fit");
+				int n=0;
+				while(n<avail)
+				{
+					if(availList[n].siz>rec_size)
+					{
+						return availList[n].off;
+					}
+					else
+						n++;
+					
+				}
+				
+				
+			}
+				
+			else if(!strcmp(policy,"--best-fit"))	
+			{
+				long min=MAX;
+				int index;
+				long offset;
+				int n=0;
+				while(n<avail)
+				{
+					if((availList[n].siz-rec_size)<min&&(availList[n].siz-rec_size)>=0)
+					{
+						min=availList[n].siz-rec_size;
+						offset=availList[n].off;
+						index=n;
+					}
+					
+					else
+						n++;
+				}
+				
+			
+				//******** check if min equals 0, if so, move entries in availability lists from that index onwards
+				if(min==0)
+				{
+					while(index<avail-1)
+					{
+						availList[index].off=availList[index+1].off;
+						availList[index].siz=availList[index+1].siz;
+					}
+					avail--;
+				}
+				
+				else
+				availList[index].siz=min;
+				
+				
+				return offset;
+			}
+			
+			else if(!strcmp(policy,"--worst-fit"))
+			{
+				int max=-1;
+				int index;
+				long offset;
+				int n=0;
+				while(n<avail)
+				{
+					if((availList[n].siz-rec_size)>max&&(availList[n].siz-rec_size)>=0)
+					{
+						max=availList[n].siz-rec_size;
+						offset=availList[n].off;
+						index=n;
+					}
+					else
+					n++;
+				}
+				
+					//******** check if max equals 0, if so, move entries in availability lists from that index onwards
+				if(max==0)
+				{
+					while(index<avail-1)
+					{
+						availList[index].off=availList[index+1].off;
+						availList[index].siz=availList[index+1].siz;
+					}
+					avail--;
+				}
+				
+				else
+				availList[index].siz=max;
+				return offset;
+			}
+	}
+	return -1;
+}
+
+
+void insertIntoIndex(char rec_key[], long rec_offset)
+{
+
+	int key_val=atoi(rec_key);
+	//printf("\nKey to be added is %d",key_val);
+
+ //use insertion sort on index.bin to insert new record
+ 
+ if(count==0)
+ {
+
+	prim[0].key=key_val;
+	prim[0].off=rec_offset;
+
+}
+	else{
+	int n=count;
+ 	int i = n-1;
+
+     while(key_val<prim[i].key && i>=0)
+
+     {
+           prim[i+1].key = prim[i].key;
+           prim[i+1].off = prim[i].off;
+           i--;
+     }
+
+     prim[i+1].key = key_val;
+     prim[i+1].off = rec_offset;
+     n++;
+}
+count++;
+
+
+}
+
+
+void add(char key[], char rec[])
+{
+	int len;
+	len=strlen(rec);
+	//printf("\nrec is %s \nsize of the record is %d\n\n",rec, len);
+	char *buf; /* Buffer to hold student record */ 
+	FILE *fp; /* Input/output stream */ 
+	long rec_off; /* Record offset */ 
+	int rec_siz; /* Record size, in characters */ 
+	
+	
+	/* If student.db doesn't exist, create it, otherwise read * its first record */ 
+	if ( ( fp = fopen( "student.db", "r+b" ) ) == NULL ) 
+	{ 
+			
+		fp = fopen( "student.db", "w+b" ); 
+		len=strlen(rec);
+		long total_size=len*sizeof(char)+sizeof(int);		//sizeof(char) will be 1
+    	fwrite(&len, 1,sizeof(int), fp);
+		fwrite(&rec, 1, len, fp);
+	//	printf("\nkey is :%s",key);
+   	//	printf("\nrec is :%s",rec);
+   		long out_offset = ftell(fp)-total_size;
+   	//	printf("\nout_offset is :%lu",out_offset);
+		fclose(fp);
+		insertIntoIndex(key,out_offset);
+		
+	}
+	 
+	else 
+	{ 	
+	//printf("key read is: %s\n", key);
+    //printf("rec read is: %s\n", rec);
+    	if(key_exists(key))						//check if key already exists in the index.bin
+    		printf("\nRecord with SID=%s exists", key);
+    		
+    	else									//if not, check availablity list
+											//add the key to the index.bin with offset keeping it sorted
+    	{
+    		//printf("%s\n",key); 	
+    		long total_size=len*sizeof(char)+sizeof(int);		//sizeof(char) will be 1
+    	
+			signed long offset = check_avail(total_size);				//check_avail to return offset at which record has to be inserted in the student.db file
+    		if(offset==-1)
+    		{
+    		
+    			//append to the end of index.bin
+    			fp = fopen( "student.db", "ab" ); 
+				//printf("\nkey is :%s",key);
+   				//printf("\nrec is :%s",rec);
+   				fwrite(&len, 1,sizeof(int), fp);
+				fwrite(&rec, 1, len , fp);
+				long out_offset = ftell(fp)-total_size;
+   			//	printf("\nout_offset is :%lu",out_offset);
+   				fclose(fp);
+    			//insert key-offset entry in index.bin where offset =end of file
+    			insertIntoIndex(key,out_offset);
+    			
+    		}
+    		else {
+    				
+				insertIntoIndex(key,offset);						//actually sorting and inserting the index and offset in index.bin
+			}
+		}
+    }
+	}
+	
+
+
+int key_exists(char key_str[])		//check if primary key exists in the index.bin using binary search
+{
+	int key=atoi(key_str);
+	int isFound=0;
+	
+	//binary bearch for the key
+	
+	int first = 0;
+	int last = count - 1;
+    int middle = (first+last)/2;
+ 
+   while( first <= last )
+   {
+      if ( prim[middle].key < key )
+         first = middle + 1;    
+      else if ( prim[middle].key == key ) 
+      {
+         isFound=1;
+         return isFound;
+         break;
+      }
+      else
+         last = middle - 1;
+ 		 middle = (first + last)/2;
+   }
+   if ( first > last )
+      return isFound;
+
+	
+}
+
+void del(char key_str[])
+{
+	
+	int key=atoi(key_str);
+	//printf("\n\nkey to delete is: %d",key);
+	//int isFound=0;
+	long offset;int a;
+	
+	//binary bearch for the key
+	
+	int first = 0;int c;
+	int last = count - 1;
+    int middle = (first+last)/2;
+ 
+   while( first <= last )
+   {
+      if ( prim[middle].key < key )
+         first = middle + 1;    
+      else if ( prim[middle].key == key ) 
+      {
+      	//printf("\ndeleting key %d", prim[middle].key );
+      	offset = prim[middle].off;
+      	a=prim[middle].key;
+        //delete entry from index file 
+ 		for ( c = middle ; c < count - 1 ; c++ )
+ 	     {
+      		prim[c].key = prim[c+1].key;
+      		prim[c].off = prim[c+1].off;
+      	 }
+      	 c--;
+      	 count-=1;
+      	 
+      	 //Add offset and size in availibility list
+      	int rec_size;
+      	FILE *file;   
+		file = fopen("student.db", "rb");
+		fseek( file, offset , SEEK_SET ); //reading offset element
+		fread( &rec_size, sizeof( int ), 1, file );
+		//printf("\nin delete size of record is %d for key %d",rec_size, a);
+		availList[avail].off=offset;
+		availList[avail].siz=rec_size+sizeof(int);
+		avail++;
+         fclose(file);
+         break;
+      }
+      else
+         last = middle - 1;
+ 		 middle = (first + last)/2;
+ 	}
+   if ( first > last )
+      printf("\nNo record with SID=%d exists",key);
+	
+	
+}
+
+void find(char key_str[])
+{
+	
+	int key=atoi(key_str);
+	
+	
+	//binary bearch for the key
+	FILE *file;   
+		 file = fopen("student.db", "rb");
+	int first = 0;
+	int last = count - 1;
+    int middle = (first+last)/2;
+    long find_offset;
+ 
+   while( first <= last )
+   {
+      if ( prim[middle].key < key )
+         first = middle + 1;    
+      else if ( prim[middle].key == key ) 
+      {
+      	printf("\nKey to find %d:",prim[middle].key);
+         find_offset=prim[middle].off;
+         printf("\nReading at offset %ld:",find_offset);
+         //******** read record from binary file at offset
+         char *record_buf[100];
+         int rec_size;
+         
+		 fseek( file, find_offset , SEEK_SET ); //reading offset element for size o record
+		 fread( &rec_size, sizeof( int ), 1, file );
+		 printf("\nrec size to read is %d",rec_size);
+		 //record_buf=malloc(rec_size);
+		 //fseek( file, offset+sizeof(int) , SEEK_SET ); //reading offset element
+		 fread( &record_buf, rec_size, 1, file );
+		 
+		 printf("\n%s",record_buf);
+		 
+		 
+         break;
+      }
+      else
+         last = middle - 1;
+ 		 middle = (first + last)/2;
+   }
+   if ( first > last )
+      printf("\nNo record with SID=%d exists",key);
+	fclose(file);
+}
+
+void end()
+{
+	//write index to index.bin
+	FILE *out; /* Output file stream */ 
+	out = fopen( "index.bin", "wb" ); 
+	fwrite( prim, sizeof( index_S ), 10000, out ); 
+	fclose( out );
+	
+	//print the key offset
+	int j;
+	printf("\nIndex:");
+	for(j=0;j<count;j++){
+		printf("\nkey=%d: offset=%ld", prim[j].key, prim[j].off);
+	}
+	
+	long hole_space=0;
+	printf("\nAvailability:");
+	for(j=0;j<avail;j++)
+	
+		{
+			hole_space+=availList[j].siz;
+			printf("\nsize=%ld: offset=%ld", availList[j].siz, availList[j].off);
+		}
+	printf("\nNumber of Holes: %d",avail);
+	printf("\nHole space: %ld",hole_space);
+
+	 
+
+}
+
+int main (int argc, char *argv[])
+{
+	
+	int c;
+	FILE *file;   
+	file = fopen("input-03.txt", "r");
+
+	char command[10];
+	char key[30];
+	char rec[100];
+	
+	//*policy="--first-fit";
+	
+
+	
+	
+    if (file == NULL) {
+        printf("Error opening file.\n");
+    } else {
+        while (!feof(file)) {
+           fscanf(file,"%s",command);
+            //printf("word read is: %s\n", command);
+            
+            if (!strcmp(command,"add"))
+            {
+            fscanf(file,"%s%s",key,rec);
+            //printf("key read is: %d\n", atoi(key));
+            //printf("rec read is: %s\n", rec);
+            add(key,rec);
+            
+       		}
+       		
+       		else
+       			if(!strcmp(command,"find"))
+       			{
+            		fscanf(file,"%s",key);
+            		//printf("key read is: %s\n", key);
+            		find(key);
+       			}
+       			
+       		else
+       			if(!strcmp(command,"del"))
+       			{
+            		fscanf(file,"%s",key);
+            		//printf("key read is: %s\n", key);
+            		del(key);
+       			}
+       			
+       		else
+       			if(!strcmp(command,"end"))
+       			{
+       				
+            		end();		//write to file and print final output for index and availability list
+            		break;
+       			}
+        }
+    }
+    fclose(file);
+  
+}
+
